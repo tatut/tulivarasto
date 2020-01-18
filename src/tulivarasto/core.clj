@@ -63,3 +63,35 @@
           (traverse/traverse path)
           .get .get .getData
           convert/document-data->clj))
+
+(defn- field-path [kw]
+  (FieldPath/of (into-array String [(str kw)])))
+
+(defn query
+  "Query multiple documents from a collection.
+  Returns a listing of maps.
+
+  Options:
+  :order-by         keyword of field to order by
+  :order-direction  :asc/:desc direction of order (defaults to ascending)
+  :select           collection of keywords to restrict which fields
+                    are returned from the collections.
+  "
+  ([db path] (query db path {}))
+  ([db path {:keys [order-by order-direction limit select]}]
+   (let [coll (traverse/traverse db path)
+         coll (if order-by
+                (.orderBy coll
+                          (field-path order-by)
+                          (case order-direction
+                            (:asc :ascending nil) Query$Direction/ASCENDING
+                            (:desc :descending) Query$Direction/DESCENDING))
+                coll)
+         coll (if limit
+                (.limit coll limit)
+                coll)
+         coll (if select
+                (.select coll (into-array FieldPath (map field-path select)))
+                coll)]
+     (map (comp convert/document-data->clj #(.getData %))
+          (-> coll .get .get .getDocuments)))))
