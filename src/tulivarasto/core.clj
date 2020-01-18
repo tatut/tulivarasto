@@ -50,6 +50,7 @@
       (-> read-future
           .get .get .getData
           convert/document-data->clj))))
+
 (defn read-path
   "Read document from path.
 
@@ -61,4 +62,4 @@
   (some-> db
           (traverse/traverse path)
           .get .get .getData
-          convert/document-data->cj))
+          convert/document-data->clj))
